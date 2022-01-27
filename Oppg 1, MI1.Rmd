@@ -1,0 +1,50 @@
+# Mappeoppgave 1
+## Setup - Laster ned nødvendige pakker
+```{r message=TRUE, warning=FALSE}
+library(tidyverse)
+library(zoo)
+library(ggplot2)
+```
+
+```{r message=FALSE, warning=FALSE}
+# Laster ned filen fra nettsiden
+uahncdc_lt_6_0 <- read_table("http://vortex.nsstc.uah.edu/data/msu/v6.0/tlt/uahncdc_lt_6.0.txt")
+
+# Filtrere bort unnødvendig data jeg ikke trenger, legger til 2022 slik at når ny data kommer så fungerer det
+tfaere <- uahncdc_lt_6_0 %>%
+  filter(Year <= 2022) %>%
+  group_by(Globe) 
+
+# Beregner et 13-måneders glidende-gjennomsnitt 
+tfaere %>%
+  mutate(mnd_gjsnitt = rollmean(Globe, k=13, fill = NA))
+
+# Sjekker hvilken classe variablene mine er på, finner ut at de ikke 
+class(tfaere$Globe)
+class(tfaere$Year)
+
+# Konverterer variablene til numerisk verdi
+tfaere$Globe <- as.numeric(tfaere$Globe)
+tfaere$Year <- as.numeric(tfaere$Year)
+
+str(tfaere)
+
+# Lager plotet
+tfaere %>%
+  ggplot(aes(x=Year, y=Globe)) + 
+  geom_point(alpha = 0.3, color="dark blue") +
+  geom_line(color="dark blue") +
+  geom_smooth(color="red", orientation = "mnd_gjsnitt", span=0.09, se = FALSE) +
+  geom_hline(yintercept = 0, alpha = 0.5) +
+  scale_y_continuous(limits = c(-0.7, 0.9),
+                     breaks = scales::breaks_width(0.1)) +
+  scale_x_continuous(limits = c(1979, 2022),
+                     # endrer width til 2 så årstallene ikke blir så sammenklemt sammen :)
+                     breaks = scales::breaks_width(2)) +
+  labs(title="Satellittbasert temperatur på klodens nedre atmosfære",
+       subtitle = "Temperaturer fra 1979-2021",
+       x ="År",
+       y = "Gjennomsnittlig grader (celsius)") +
+  theme_bw()
+```
+
