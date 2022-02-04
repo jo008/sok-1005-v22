@@ -1,0 +1,80 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+# Mappeoppgave 2
+## Setup
+
+```{r message=FALSE, warning=FALSE}
+# Laster ned nødvendige pakker
+library(tidyverse)
+library(ggrepel)
+library(RCurl)
+library(jsonlite)
+library(ggplot2)
+```
+
+## Oppgave 1
+
+```{r}
+covid <- fromJSON(getURL("https://static01.nyt.com/newsgraphics/2021/12/20/us-coronavirus-deaths-2021/ff0adde21623e111d8ce103fedecf7ffc7906264/scatter.json"))
+str(covid)
+
+# Plotter en figur som viser forholdet mellom vaksinasjonsgrad og antall døde av Covid-19 i de ulike statene i USA.
+
+covid_plot <- covid %>%
+  #ggplot med de riktige variablene, fikser sånn at punktene får navnet til statene
+  ggplot(aes(x=fully_vaccinated_pct_of_pop, y=deaths_per_100k, label=name)) + 
+  # Dette gjør at vi får linjer til punktene, slik at de ikke overlapper på teksten
+  geom_text_repel(min.segment.length = Inf, seed = 42, box.padding = 0.5, size=3) +
+  geom_point(alpha = 0.5, color="dark green", size=2.5) +
+  # Gjør at skalaen blir til prosent
+  scale_x_continuous(labels = scales::percent, limits=c(0.45, 0.80),breaks=seq(0.45, 0.80, by = 0.05))+
+  # Legger riktige titler
+  labs(title="Covid-19 dødsfall siden universell voksenvaksine kvalifisert ",
+       subtitle = "Sammenlignet med vaksinasjonsrater",
+       x ="Andel av totalbefolkningen fullvaksinert",
+       y = "20 gj.sn månedlige dødsfall per 100.000") +
+  # Pil 1, den øverste
+  geom_text(aes(x=0.61, y=18, label="Lower vaccination rate,\nhigher death rate"), size = 3) +
+  annotate("segment", x=0.567, xend = 0.55, y = 18, yend = 19, colour = "black", size=0.5, 
+           arrow = arrow(length = unit(.2,"cm"))) +
+  # Pil 2, den nederste
+  geom_text(aes(x=0.76, y=11, label="Higher vaccination rate,\nlower death rate"), size = 3) +
+  annotate("segment", x=0.75, xend = 0.77, y = 9.5, yend = 8, colour = "black", size=0.5, 
+           arrow = arrow(length = unit(.2,"cm"))) +
+   theme_bw()
+covid_plot 
+```
+
+## Oppgave 2
+
+```{r}
+covid2 <- lm(deaths_per_100k ~ fully_vaccinated_pct_of_pop, data = covid) 
+
+covid %>%
+  #ggplot med de riktige variablene, fikser sånn at punktene får navnet til statene
+  ggplot(aes(x=fully_vaccinated_pct_of_pop, y=deaths_per_100k, label=name)) + 
+  geom_smooth(method = lm) +
+  # Dette gjør at vi får linjer til punktene, slik at de ikke overlapper på teksten
+  geom_text_repel(min.segment.length = Inf, seed = 42, box.padding = 0.5, size=3) +
+  geom_point(alpha = 0.5, color="dark green", size=2.5) +
+  scale_x_continuous(labels = scales::percent, limits=c(0.45, 0.80),breaks=seq(0.45, 0.80, by = 0.05))+
+  labs(title="Covid-19 dødsfall siden universell voksenvaksine kvalifisert ",
+       subtitle = "Sammenlignet med vaksinasjonsrater",
+       x ="Andel av totalbefolkningen fullvaksinert",
+       y = "20 gj.sn månedlige dødsfall per 100.000") +
+  # Pil 1, den øverste
+  geom_text(aes(x=0.61, y=18, label="Lower vaccination rate,\nhigher death rate"), size = 3) +
+  annotate("segment", x=0.567, xend = 0.55, y = 18, yend = 19, colour = "black", size=0.5, 
+           arrow = arrow(length = unit(.2,"cm"))) +
+  # Pil 2, den nederste
+  geom_text(aes(x=0.76, y=11, label="Higher vaccination rate,\nlower death rate"), size = 3) +
+  annotate("segment", x=0.75, xend = 0.77, y = 9.5, yend = 8, colour = "black", size=0.5, 
+           arrow = arrow(length = unit(.2,"cm"))) +
+  theme_bw()
+```
+
+Det vi ser i oppgave 2 sin plott er at den blå linjen viser at destå mere vaksinere seg, så reduseres antall dødsfall. Vi ser at de statene mer høyere vaksinerings prosent, så er det minst dødsfall. Mens de statene som ikke har mindre vaksinerings prosent, at tallene for antall dødsfall er høye. 
+Den grå linjen er en lineær regresjon, den viser oss sammenhengen mellom variablene våres. 
